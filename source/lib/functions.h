@@ -132,6 +132,9 @@ md_func(GroupDeactivate, (In, String, GroupName), (In_Opt, String, Mode))
 md_func_v(GuiCtrlFromHwnd, (In, UInt32, Hwnd), (Ret, Object, Gui))
 md_func_v(GuiFromHwnd, (In, UInt32, Hwnd), (In_Opt, Bool32, Recurse), (Ret, Object, Gui))
 
+md_func(HashFile, (In, String, Data), (In_Opt, Int32, Algorithm), (Ret, String, Hash))
+md_func(HashString, (In, String, Data), (In_Opt, String, Hmac), (In_Opt, Int32, Algorithm), (Ret, String, Hash))
+
 md_func(HotIf, (In_Opt, Variant, Criterion))
 md_func(HotIfWinActive, (In_Opt, String, WinTitle), (In_Opt, String, WinText))
 md_func(HotIfWinExist, (In_Opt, String, WinTitle), (In_Opt, String, WinText))
