@@ -72,13 +72,13 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     if (aHmac.has_value())
     {
         LPCTSTR Secret = aHmac.value();
-        size_t length = _tcslen(Secret);
-        BYTE* pbText = new BYTE[length];
-        for (int i = 0; i < length; i++)
+        size_t cbSecret = _tcslen(Secret);
+        BYTE* pbSecret = new BYTE[cbSecret];
+        for (int i = 0; i < cbSecret; i++)
         {
-            pbText[i] = (BYTE)Secret[i];
+            pbSecret[i] = (BYTE)Secret[i];
         }
-        if (!NT_SUCCESS(Status = BCryptCreateHash(hAlgorithm, &hHash, NULL, 0, pbText, (ULONG)length, 0)))
+        if (!NT_SUCCESS(Status = BCryptCreateHash(hAlgorithm, &hHash, NULL, 0, pbSecret, (ULONG)cbSecret, 0)))
         {
             goto Cleanup;
         }
@@ -96,13 +96,13 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     {
         case InputType::String:
         {
-            size_t length = _tcslen(aInput);
-            BYTE* pbText = new BYTE[length];
-            for (int i = 0; i < length; i++)
+            size_t cbInput = _tcslen(aInput);
+            BYTE* pbInput = new BYTE[cbInput];
+            for (int i = 0; i < cbInput; i++)
             {
-                pbText[i] = (BYTE)aInput[i];
+                pbInput[i] = (BYTE)aInput[i];
             }
-            if (!NT_SUCCESS(Status = BCryptHashData(hHash, pbText, (ULONG)length, 0)))
+            if (!NT_SUCCESS(Status = BCryptHashData(hHash, pbInput, (ULONG)cbInput, 0)))
             {
                 goto Cleanup;
             }
