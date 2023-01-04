@@ -36,8 +36,7 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
         case 6: AlgId = BCRYPT_SHA384_ALGORITHM; break;
         case 7: AlgId = BCRYPT_SHA512_ALGORITHM; break;
         default:
-            // Since above didn't break, aAlgorithm was invalid.
-            return FR_E_ARG(0);
+            AlgId = BCRYPT_SHA1_ALGORITHM;
     }
 
     ULONG Flags = 0;
