@@ -20,7 +20,7 @@ enum class InputType
 };
 
 
-static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl<int> aAlgorithm, StrRet& aRetVal)
+static FResult HashData(InputType aType, StrArg aInput, optl<StrArg> aAlgorithm, optl<StrArg> aHmac, StrRet& aRetVal)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
     BCRYPT_HASH_HANDLE hHash = NULL;
@@ -29,17 +29,38 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     HANDLE hFile = INVALID_HANDLE_VALUE;
 
     LPCWSTR AlgId;
-    switch (aAlgorithm.value_or(0))
+    LPCTSTR algorithm = aAlgorithm.value_or_empty();
+    if (!_tcsicmp(algorithm, _T("MD2")))
     {
-        case 1: AlgId = BCRYPT_MD2_ALGORITHM; break;
-        case 2: AlgId = BCRYPT_MD4_ALGORITHM; break;
-        case 3: AlgId = BCRYPT_MD5_ALGORITHM; break;
-        case 4: AlgId = BCRYPT_SHA1_ALGORITHM; break;
-        case 5: AlgId = BCRYPT_SHA256_ALGORITHM; break;
-        case 6: AlgId = BCRYPT_SHA384_ALGORITHM; break;
-        case 7: AlgId = BCRYPT_SHA512_ALGORITHM; break;
-        default:
-            AlgId = BCRYPT_SHA1_ALGORITHM;
+        AlgId = BCRYPT_MD2_ALGORITHM;
+    }
+    else if (!_tcsicmp(algorithm, _T("MD4")))
+    {
+        AlgId = BCRYPT_MD4_ALGORITHM;
+    }
+    else if (!_tcsicmp(algorithm, _T("MD5")))
+    {
+        AlgId = BCRYPT_MD5_ALGORITHM;
+    }
+    else if (!_tcsicmp(algorithm, _T("SHA1")))
+    {
+        AlgId = BCRYPT_SHA1_ALGORITHM;
+    }
+    else if (!_tcsicmp(algorithm, _T("SHA256")))
+    {
+        AlgId = BCRYPT_SHA256_ALGORITHM;
+    }
+    else if (!_tcsicmp(algorithm, _T("SHA384")))
+    {
+        AlgId = BCRYPT_SHA384_ALGORITHM;
+    }
+    else if (!_tcsicmp(algorithm, _T("SHA512")))
+    {
+        AlgId = BCRYPT_SHA512_ALGORITHM;
+    }
+    else // default
+    {
+        AlgId = BCRYPT_SHA1_ALGORITHM;
     }
 
     ULONG Flags = 0;
@@ -204,12 +225,12 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     return Status ? FR_E_WIN32 : OK;
 }
 
-bif_impl FResult HashFile(StrArg aText, optl<int> aAlgorithm, StrRet& aRetVal)
+bif_impl FResult HashFile(StrArg aText, optl<StrArg> aAlgorithm, StrRet& aRetVal)
 {
-    return HashData(InputType::File, aText, NULL, aAlgorithm, aRetVal);
+    return HashData(InputType::File, aText, aAlgorithm.value_or_empty(), NULL, aRetVal);
 }
 
-bif_impl FResult HashString(StrArg aText, optl<StrArg> aHmac, optl<int> aAlgorithm, StrRet& aRetVal)
+bif_impl FResult HashString(StrArg aText, optl<StrArg> aAlgorithm, optl<StrArg> aHmac, StrRet& aRetVal)
 {
-    return HashData(InputType::String, aText, aHmac.value(), aAlgorithm, aRetVal);
+    return HashData(InputType::String, aText, aAlgorithm.value_or_empty(), aHmac.value(), aRetVal);
 }
