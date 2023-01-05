@@ -74,17 +74,23 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     // create a hash
     if (aHmac.has_value())
     {
+        CStringA utf8_secret;
         LPCTSTR Secret = aHmac.value();
-        size_t cbSecret = _tcslen(Secret);
-        BYTE* pbSecret = new BYTE[cbSecret];
-        for (int i = 0; i < cbSecret; i++)
+        size_t secret_len = _tcslen(Secret);
+        StringTCharToUTF8(Secret, utf8_secret, (INT)secret_len);
+
+        BYTE* pbSecret = new BYTE[utf8_secret.GetLength() * 2];
+        for (int i = 0; i < utf8_secret.GetLength(); i++)
         {
-            pbSecret[i] = (BYTE)Secret[i];
+            pbSecret[i] = (BYTE)utf8_secret.GetString()[i];
         }
-        if (!NT_SUCCESS(Status = BCryptCreateHash(hAlgorithm, &hHash, NULL, 0, pbSecret, (ULONG)cbSecret, 0)))
+
+        if (!NT_SUCCESS(Status = BCryptCreateHash(hAlgorithm, &hHash, NULL, 0, pbSecret, (ULONG)(utf8_secret.GetLength()), 0)))
         {
+            delete[] pbSecret;
             goto Cleanup;
         }
+        delete[] pbSecret;
     }
     else
     {
@@ -99,16 +105,23 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     {
         case InputType::String:
         {
-            size_t cbInput = _tcslen(aInput);
-            BYTE* pbInput = new BYTE[cbInput];
-            for (int i = 0; i < cbInput; i++)
+            CStringA utf8_input;
+            size_t input_len = _tcslen(aInput);
+            StringTCharToUTF8(aInput, utf8_input, (INT)input_len);
+
+            BYTE* pbInput = new BYTE[utf8_input.GetLength() * 2];
+            for (int i = 0; i < utf8_input.GetLength(); i++)
             {
-                pbInput[i] = (BYTE)aInput[i];
+                pbInput[i] = (BYTE)utf8_input.GetString()[i];
             }
-            if (!NT_SUCCESS(Status = BCryptHashData(hHash, pbInput, (ULONG)cbInput, 0)))
+
+            if (!NT_SUCCESS(Status = BCryptHashData(hHash, pbInput, (ULONG)(utf8_input.GetLength()), 0)))
             {
+                delete[] pbInput;
                 goto Cleanup;
             }
+
+            delete[] pbInput;
             break;
         }
         case InputType::File:
