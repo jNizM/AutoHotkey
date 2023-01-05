@@ -122,7 +122,7 @@ static FResult HashData(InputType aType, StrArg aInput, optl<StrArg> aAlgorithm,
     }
 
     // hash some data
-    switch (atype)
+    switch (aType)
     {
         case InputType::String:
         {
