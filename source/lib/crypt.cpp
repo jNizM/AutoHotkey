@@ -1,9 +1,10 @@
 #include "stdafx.h"
 #include "script.h"
+#include "globaldata.h"
+#include "application.h"
+#include "script_func_impl.h"
 #include <windows.h>
 #include <bcrypt.h>
-#include <fstream>
-#include "script_func_impl.h"
 
 #pragma comment(lib, "bcrypt.lib")
 
@@ -22,8 +23,10 @@ enum class InputType
 static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl<int> aAlgorithm, StrRet& aRetVal)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
-    LPBYTE pbHash = NULL;
     BCRYPT_HASH_HANDLE hHash = NULL;
+    LPBYTE pbHash = NULL;
+    LPBYTE file_buf = NULL;
+    HANDLE hFile = INVALID_HANDLE_VALUE;
 
     LPCWSTR AlgId;
     switch (aAlgorithm.value_or(0))
@@ -110,23 +113,40 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
         }
         case InputType::File:
         {
-            std::ifstream file(aInput, std::ios::binary);
-            if (!file)
+            hFile = CreateFile(aInput, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+            if (hFile == INVALID_HANDLE_VALUE)
             {
                 Status = ERROR_OPEN_FAILED;
                 goto Cleanup;
             }
-            char buffer[1024];
-            while (file)
+
+            file_buf = (LPBYTE)malloc(size_t(1048576)); // 1 MB
+            if (!file_buf)
             {
-                file.read(buffer, sizeof(buffer));
-                DWORD dataread = static_cast<DWORD>(file.gcount());
-                if (dataread > 0)
+                Status = STATUS_NO_MEMORY;
+                goto Cleanup;
+            }
+
+            DWORD bytes_read = 0;
+            LONG_OPERATION_INIT
+
+            while (true)
+            {
+                LONG_OPERATION_UPDATE
+                // read a chunk of the file
+                if (!ReadFile(hFile, file_buf, 1048576, &bytes_read, NULL))
                 {
-                    if (!NT_SUCCESS(Status = BCryptHashData(hHash, reinterpret_cast<PBYTE>(buffer), dataread, 0)))
-                    {
-                        goto Cleanup;
-                    }
+                    break;
+                }
+                // end of file reached
+                if (bytes_read == 0)
+                {
+                    break;
+                }
+                // hash the chunk of data
+                if (!NT_SUCCESS(Status = BCryptHashData(hHash, file_buf, bytes_read, 0)))
+                {
+                    goto Cleanup;
                 }
             }
             break;
@@ -144,10 +164,17 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     {
         buf += _stprintf_s(buf, 3, _T("%02X"), pbHash[i]);
     }
-
     aRetVal.Copy(buf);
 
     Cleanup:
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(hFile);
+    }
+    if (file_buf)
+    {
+        free(file_buf);
+    }
     if (pbHash)
     {
         free(pbHash);
