@@ -22,7 +22,7 @@ enum class InputType
 static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl<int> aAlgorithm, StrRet& aRetVal)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
-    PBYTE pbHash = NULL;
+    LPBYTE pbHash = NULL;
     BCRYPT_HASH_HANDLE hHash = NULL;
 
     LPCWSTR AlgId;
@@ -61,7 +61,7 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     }
 
     // allocate the hash buffer on the heap
-    pbHash = (PBYTE)HeapAlloc(GetProcessHeap(), 0, cbHash);
+    pbHash = (LPBYTE)malloc(size_t(cbHash));
     if (NULL == pbHash)
     {
         Status = STATUS_NO_MEMORY;
@@ -150,7 +150,7 @@ static FResult HashData(InputType atype, StrArg aInput, optl<StrArg> aHmac, optl
     Cleanup:
     if (pbHash)
     {
-        HeapFree(GetProcessHeap(), 0, pbHash);
+        free(pbHash);
     }
     if (hHash)
     {
